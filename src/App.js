@@ -3,16 +3,13 @@ import Navbar from "./components/Navbar";
 
 import { BrowserRouter as Router } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loadPokemons } from "./store/pokemons";
+
+import { userLogIn, userLogOut } from "./store/user";
 
 function App() {
   const dispatch = useDispatch();
-  const pokemons = useSelector((state) => state.entities.pokemons.data.results);
-
-  console.log(pokemons);
 
   useEffect(() => {
-    dispatch(loadPokemons());
     //eslint-disable-next-line
   }, []);
 
@@ -20,6 +17,8 @@ function App() {
     <Router>
       <div className="container mt-3">
         <Navbar />
+        <button onClick={() => dispatch(userLogIn())}>goggle login</button>
+        <button onClick={() => dispatch(userLogOut())}>logout</button>
       </div>
     </Router>
   );
