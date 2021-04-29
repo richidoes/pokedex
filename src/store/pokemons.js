@@ -42,7 +42,6 @@ export default slice.reducer;
 
 //--------actions -------------------
 
-//get single pokemon details
 export const getPokemonDetails = (pokemonURL = defaultPokemonURL) => (
   dispatch
 ) => {
@@ -61,7 +60,7 @@ export const getPokemonDetails = (pokemonURL = defaultPokemonURL) => (
     })
   );
 };
-//get the firsts pokemons
+
 export const loadDefaultPokemons = () => (dispatch) => {
   if (localStorage.getItem(baseURL)) {
     const pokemons = JSON.parse(localStorage.getItem(baseURL));
@@ -79,7 +78,6 @@ export const loadDefaultPokemons = () => (dispatch) => {
   }
 };
 
-//get the next page of pokemons
 export const loadNextPokemons = () => (dispatch, getState) => {
   const { next } = getState().entities.pokemons.list;
 
@@ -99,7 +97,6 @@ export const loadNextPokemons = () => (dispatch, getState) => {
   }
 };
 
-//get the previous page of pokemons
 export const loadPreviousPokemons = () => (dispatch, getState) => {
   const { previous } = getState().entities.pokemons.list;
 

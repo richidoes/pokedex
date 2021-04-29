@@ -1,4 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { storage, db } from "../firebase";
+
 import { authBegan } from "./auth";
 
 //---------- Reducer ----------------
@@ -24,13 +26,14 @@ const slice = createSlice({
     },
     userLoggedOut: (user, action) => {
       user.active = false;
+      user.loading = false;
       user.data = {};
     },
     userNameUpdated: (user, action) => {
       user.data.displayName = action.payload;
       user.loading = false;
     },
-    userPhotoChanged: (user, action) => {
+    userPhotoUpdated: (user, action) => {
       user.data.photoURL = action.payload;
       user.loading = false;
     },
@@ -43,7 +46,7 @@ export const {
   userLogFailed,
   userLoggedOut,
   userNameUpdated,
-  userPhotoChanged,
+  userPhotoUpdated,
 } = slice.actions;
 export default slice.reducer;
 
@@ -88,13 +91,45 @@ export const updateUserName = (updatedName) => (dispatch) => {
   );
 };
 
-export const changeUserPhoto = (newPhoto) => (dispatch) => {
-  return dispatch(
-    authBegan({
-      newPhoto,
-      onStart: userLogRequested.type,
-      onSuccess: userPhotoChanged.type,
-      onError: userLogFailed.type,
-    })
-  );
+export const updateUserPhoto = (newPhoto) => async (dispatch, getState) => {
+  const { user } = getState().entities;
+
+  dispatch({ type: userLogRequested.type });
+
+  try {
+    //create a dir and a file name for the image to save
+    const imageRef = await storage
+      .ref()
+      .child(user.data.email)
+      .child("profile photo");
+
+    //update image in storage
+    await imageRef.put(newPhoto);
+    const imageURL = await imageRef.getDownloadURL();
+
+    //update user image
+    await db.collection("users").doc(user.data.email).update({
+      photoURL: imageURL,
+    });
+
+    //update store
+    dispatch({
+      type: userPhotoUpdated.type,
+      payload: imageURL,
+    });
+
+    //update user in localStorage
+    const updatedUser = {
+      ...user.data,
+      photoURL: imageURL,
+    };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  } catch (error) {
+    console.log(error.message);
+
+    dispatch({
+      type: userLogFailed.type,
+      payload: error.message,
+    });
+  }
 };

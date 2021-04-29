@@ -1,12 +1,12 @@
 import * as actions from "../auth";
-import { auth, db, firebase, storage } from "../../firebase";
+import { auth, db, firebase } from "../../firebase";
 
 const userAuth = ({ dispatch, getState }) => (next) => async (action) => {
   if (action.type !== actions.authBegan.type) return next(action);
 
   next(action);
 
-  const { onStart, onSuccess, onError, updatedName, newPhoto } = action.payload;
+  const { onStart, onSuccess, onError, updatedName } = action.payload;
 
   if (onStart) dispatch({ type: onStart });
 
@@ -14,8 +14,6 @@ const userAuth = ({ dispatch, getState }) => (next) => async (action) => {
     try {
       const provider = new firebase.auth.GoogleAuthProvider();
       const response = await auth.signInWithPopup(provider);
-
-      console.log(response.user);
 
       const user = {
         uid: response.user.uid,
@@ -25,7 +23,6 @@ const userAuth = ({ dispatch, getState }) => (next) => async (action) => {
       };
 
       const userInDB = await db.collection("users").doc(user.email).get();
-      console.log(userInDB);
 
       if (userInDB.exists) {
         dispatch({
@@ -73,7 +70,7 @@ const userAuth = ({ dispatch, getState }) => (next) => async (action) => {
   }
 
   if (onSuccess === "user/userNameUpdated") {
-    const { user } = getState();
+    const { user } = getState().entities;
 
     try {
       await db.collection("users").doc(user.data.email).update({
@@ -86,7 +83,6 @@ const userAuth = ({ dispatch, getState }) => (next) => async (action) => {
       });
 
       const updatedUser = { ...user.data, displayName: updatedName };
-      console.log(updatedUser);
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (error) {
@@ -98,44 +94,7 @@ const userAuth = ({ dispatch, getState }) => (next) => async (action) => {
     }
   }
 
-  if (onSuccess === "user/userPhotoChanged") {
-    const { user } = getState();
-
-    try {
-      //create a dir and a file name for the image to save
-      const imageRef = await storage
-        .ref()
-        .child(user.data.email)
-        .child("profile photo");
-
-      //update image in storage
-      await imageRef.put(newPhoto);
-      const imageURL = await imageRef.getDownloadURL();
-      await db.collection("users").doc(user.data.email).update({
-        photoURL: imageURL,
-      });
-
-      //update store
-      dispatch({
-        type: onSuccess,
-        payload: imageURL,
-      });
-
-      const updatedUser = {
-        ...user.data,
-        photoURL: imageURL,
-      };
-      console.log(updatedUser);
-
-      localStorage.setItem("usuario", JSON.stringify(updatedUser));
-    } catch (error) {
-      console.log(error.message);
-      dispatch({
-        type: onError,
-        payload: error.message,
-      });
-    }
-  }
+  return;
 };
 
 export default userAuth;
